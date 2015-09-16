@@ -55,17 +55,24 @@ components.forEach(function(component) {
 
       // NPM
       request(options, function(error, response, data) {
+        if (error) {
+          console.log("Problems with request for " + component.name);
+          return;
+        }
         if (!data["dist-tags"]) console.log("Problems with dist data for: "+ component.name);
-        var latestVersion = data["dist-tags"].latest;
+        var latestVersion = (data["dist-tags"] && data["dist-tags"].latest) || 0;
         var githubUrl = "https://github.com/" + component.repo;
+        var homepage = (data.versions && data.versions[latestVersion] && data.versions[latestVersion].homepage) || githubUrl;
+        var keywords = ((data.versions && data.versions[latestVersion] && data.versions[latestVersion].keywords) || []).join(", ");
+
 
         resolve({
           name: component.name,
           githubUser: component.repo.split("/")[0],
           description: data.description,
           latestVersion: latestVersion,
-          homepage: data.versions[latestVersion].homepage || githubUrl,
-          keywords: (data.versions[latestVersion].keywords || []).join(", "),
+          homepage: homepage,
+          keywords: keywords,
           created: data.time.created,
           modified: data.time.modified
         });
@@ -108,8 +115,12 @@ components.forEach(function(component) {
       };
 
       request(options, function(error, response, data) {
+        if (error) {
+          console.log("Problem with stargazer count for "+ component.repo);
+          return;
+        }
         resolve({
-          stars: data.stargazers_count
+          stars: data.stargazers_count ? data.stargazers_count : 0
         });
       });
     }).then(merge)
