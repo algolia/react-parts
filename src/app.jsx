@@ -3,6 +3,7 @@
 
 import 'babel/polyfill';
 import 'isomorphic-fetch';
+import AlgoliaSearch from 'algoliasearch';
 import React from 'react/addons';
 import Router from 'react-router';
 import StylingMixin from './styling-mixin.jsx';
@@ -16,6 +17,11 @@ import sortBy from './sort';
 
 let Route = Router.Route;
 let RouteHandler = Router.RouteHandler;
+let AlgoliaClient = AlgoliaSearch('MXM0JWJNIW', 'e8bc1168c9537faebb06361c85adae98');
+let AlgoliaIndices = {
+  'web' : AlgoliaClient.initIndex('react-parts_web'),
+  'native-ios' : AlgoliaClient.initIndex('react-parts_native-ios')
+}
 
 export var App = React.createClass({
   mixins: [StylingMixin],
@@ -30,7 +36,7 @@ export var App = React.createClass({
   getDefaultProps() {
     return {
       perPage: 20,
-      debugMode: false
+      debugMode: true
     };
   },
   getInitialState() {
@@ -43,7 +49,7 @@ export var App = React.createClass({
   render() {
     let title = "React.parts";
     let type = this.props.params.type;
-    let components = this.sortComponents(this.state.filtered);
+    let components = this.state.filtered;
     let componentsForPage = this.componentsForPage(components);
 
     let styles = {
@@ -107,36 +113,16 @@ export var App = React.createClass({
     }
   },
   handleSearch(searchQuery) {
-    // Get all components available for the current tab
-    let components = this.state.components[this.props.params.type];
-
-    let filtered = this.filterForSearch(components, searchQuery);
-    this.setState({ filtered, searchQuery });
-
-    // TODO Improve this code: return to the first page
-    this.context.router.transitionTo("/:type", this.props.params, {});
-  },
-  filterForSearch(components, query) {
-    var results = components;
-
-    query.split(/\s+/).forEach(function(term) {
-      results = results.filter((c) => (
-        c.name.toLowerCase().indexOf(term) != -1 ||
-        (c.description || "").toLowerCase().indexOf(term) != -1 ||
-        c.keywords.toLowerCase().indexOf(term) != -1 ||
-        c.githubUser.toLowerCase().toLowerCase() == term
-      ));
+    var type = this.props.params.type;
+    var index = AlgoliaIndices[type];
+    var self = this;
+    index.search(searchQuery, function(err, data) {
+      var filtered = data.hits.map(function(result) {
+        result.modified = new Date(result.modified).toISOString()
+        return result;
+      });
+      self.setState({ filtered, searchQuery });
     });
-    return results;
-  },
-  sortComponents(components) {
-    if (this.state.searchQuery) {
-      // Sort results by stars
-      return components.sort(sortBy("stars", Number, false));
-    } else {
-      // Default sorting from server
-      return components;
-    }
   },
   currentPage() {
     var currentPage = parseInt(this.props.query.page); // May return NaN

@@ -16,7 +16,7 @@ function arrayChunk(list, chunkSize) {
 }
 
 function stringDateToUnixTimestamp(date) {
-  return Math.floor(new Date(date).getTime() / 1000);
+  return Math.floor(new Date(date).getTime());
 }
 
 
@@ -29,28 +29,29 @@ function formatRecordsForSearch(records) {
   });
 }
 
+function promiseLog(text) {
+  return function(req) {
+    console.log(text);
+    return req;
+  };
+}
 
-function pushJSON(jsonFile, indexName) {
+function pushDataToAlgolia(jsonFile, indexName) {
+  var indexNameTmp = indexName + '_tmp';
   var records = require(jsonFile);
-  var index = client.initIndex(indexName);
-  configureIndex(index);
-
+  var indexTmp = client.initIndex(indexNameTmp);
   records = formatRecordsForSearch(records);
 
-  console.log('Pushing ' + records.length + ' records on ' + indexName);
-  arrayChunk(records, 500).forEach(function(chunkedRecords, chunkIndex) {
-    index.addObjects(chunkedRecords, function(err) {
-      var chunkName = 'chunk #' + chunkIndex + ' of ' + indexName;
-      if (err) {
-        console.log('An error occured when pushing ' + chunkName);
-      }
-      console.log('Added ' + chunkName);
-    });
-  });
+  configureIndex(indexTmp)
+    .then(promiseLog('[' + indexNameTmp +']: Configured index'))
+    .then(pushRecords(records, indexTmp))
+    .then(promiseLog('[' + indexNameTmp +']: Pushed all chunks'))
+    .then(overwriteTmpIndex(client, indexNameTmp, indexName))
+    .then(promiseLog('[' + indexNameTmp +']: Delete tmp index'));
 }
 
 function configureIndex(index) {
-  index.setSettings({
+  return index.setSettings({
     attributesToIndex: [
       'name',
       'description',
@@ -63,8 +64,8 @@ function configureIndex(index) {
       'githubUser'
     ],
     customRanking: [
-      'desc(downloads)',
       'desc(stars)',
+      'desc(downloads)',
       'desc(modified)',
       'desc(created)'
     ],
@@ -73,12 +74,25 @@ function configureIndex(index) {
     hitsPerPage: 20,
     highlightPreTag: '<mark>',
     highlightPostTag: '</mark>'
-  }, function(err) {
-    if (err) {
-      console.log('An error occured when setting the index settings');
-    }
   });
 }
+function pushRecords(records, index) {
+  var pushOrders = [];
 
-pushJSON('./components/react-web.json', 'react-parts_web');
-pushJSON('./components/react-native-ios.json', 'react-parts_native-ios');
+  arrayChunk(records, 500).forEach(function(chunkedRecords) {
+    pushOrders.push(index.addObjects(chunkedRecords));
+  });
+
+  return function() {
+    return Promise.all(pushOrders);
+  };
+}
+function overwriteTmpIndex(client, indexNameTmp, indexName) {
+  return function() {
+    return client.moveIndex(indexNameTmp, indexName)
+      .then(client.deleteIndex(indexNameTmp));
+  };
+}
+
+pushDataToAlgolia('./components/react-web.json', 'react-parts_web');
+pushDataToAlgolia('./components/react-native-ios.json', 'react-parts_native-ios');
