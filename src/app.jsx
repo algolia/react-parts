@@ -119,6 +119,9 @@ export var App = React.createClass({
     index.search(searchQuery, function(err, data) {
       var filtered = data.hits.map(function(result) {
         result.modified = new Date(result.modified).toISOString()
+        result.name = result._highlightResult.name.value;
+        result.description = result._highlightResult.description_encoded.value;
+        result.githubUser = result._highlightResult.githubUser.value;
         return result;
       });
       self.setState({ filtered, searchQuery });

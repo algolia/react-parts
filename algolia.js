@@ -1,4 +1,10 @@
 /*jshint node:true, unused:true */
+// TODO
+// Switch d'un tab à l'autre
+// Pousser les stars sur native
+// Mettre l'ihighlight
+// Régler le first load (chargement server-side et return?)
+var ent = require('ent');
 var keys = require('./keys.json');
 var algoliasearch = require('algoliasearch');
 var client = algoliasearch(keys.algolia.appId, keys.algolia.apiKey);
@@ -25,6 +31,10 @@ function formatRecordsForSearch(records) {
     record.keywords = record.keywords.split(',');
     record.created = stringDateToUnixTimestamp(record.created);
     record.modified = stringDateToUnixTimestamp(record.modified);
+    // We seem to have a bug in the API where _highlightResult gets htmldecoded
+    // automatically, so we need to encode it once to have a version safe for
+    // display
+    record.description_encoded = ent.encode(ent.encode(record.description || ''));
     return record;
   });
 }
@@ -57,7 +67,18 @@ function configureIndex(index) {
       'description',
       'unordered(keywords)',
       'githubUser',
-      'repo,homepage'
+      'repo,homepage',
+      'description_encoded' // To have highlight in it
+    ],
+    attributesToRetrieve: [
+      'description_encoded',
+      'downloads',
+      'githubUser',
+      'homepage',
+      'latestVersion',
+      'modified',
+      'name',
+      'stars'
     ],
     attributesForFacetting: [
       'keywords',
