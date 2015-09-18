@@ -58,6 +58,7 @@ server.get('/:type(web|native-ios)', function(req, res) {
         currentPage: 0,
         debugMode: !production,
         searchQuery: state.searchQuery,
+        searchTime: data.processingTimeMS,
         totalItems: data.nbHits,
         type: state.params.type
       };

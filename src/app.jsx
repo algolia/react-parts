@@ -42,7 +42,7 @@ export var App = React.createClass({
     return {
       currentPage: 0,
       debugMode: false,
-      perPage: 2
+      perPage: 20
     };
   },
   getInitialState() {
@@ -50,6 +50,7 @@ export var App = React.createClass({
       components: this.props.components,
       currentPage: this.props.currentPage,
       searchQuery: this.props.searchQuery,
+      searchTime: this.props.searchTime,
       totalItems: this.props.totalItems,
       type: this.props.type
     };
@@ -76,7 +77,7 @@ export var App = React.createClass({
     };
     return (
       <Scroller className="scrollable" position={ debugMode ? "same" : "top" } style={styles.container}>
-        <Navbar title={title} height={this.remCalc(55)} onSearch={this.handleSearch} />
+        <Navbar title={title} height={this.remCalc(55)} totalItems={this.state.totalItems} searchTime={this.state.searchTime} onSearch={this.handleSearch} />
 
         <div style={styles.content}>
           <Tabs>
@@ -86,6 +87,13 @@ export var App = React.createClass({
 
           <RouteHandler components={components} debugMode={debugMode} />
 
+          <Pagination
+            to="components"
+            params={{ type }}
+            currentPage={this.state.currentPage}
+            perPage={this.props.perPage}
+            totalItems={this.state.totalItems}
+          />
 
           <Footer />
         </div>
@@ -93,28 +101,31 @@ export var App = React.createClass({
     );
   },
 
-          // <Pagination
-          //   to="components"
-          //   params={{ type }}
-          //   currentPage={this.props.currentPage}
-          //   perPage={this.props.perPage}
-          //   totalItems={this.props.totalItems}
-          // />
   componentWillReceiveProps(newProps) {
-    var type = newProps.params.type;
     var searchQuery = this.state.searchQuery;
-    this.handleSearch({ searchQuery, type});
+    var currentType = this.state.type;
+    var newType = newProps.params.type;
+    var type = newType || currentType
+    var page = newProps.query.page || this.state.currentPage;
+
+    // Revert to first page if switching type
+    if (newType !== currentType) {
+      page = 0;
+    }
+
+    this.handleSearch({ searchQuery, type, page});
   },
-  handleSearch({searchQuery = '', type = this.state.type}) {
+  handleSearch({searchQuery = '', type = this.state.type, page = this.state.currentPage}) {
     var searchOptions = {
       query: searchQuery,
       type: type,
-      page: this.state.currentPage,
+      page: page,
       perPage: this.props.perPage
     }
     getSearchResults(searchOptions).then((data) => {
       this.setState({ 
         type: type,
+
         searchQuery: searchQuery,
         components: data.hits,
         totalItems: data.nbHits,
