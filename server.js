@@ -11,6 +11,7 @@ var Router = require('react-router');
 var express = require('express');
 var cachify = require('connect-cachify');
 var ejs = require('ejs');
+var getSearchResults = require('./src/get-search-results');
 var sortBy = require('./src/sort');
 var server = express();
 var production = (process.env.NODE_ENV != "development");
@@ -44,45 +45,34 @@ server.get('/', function(req, res) {
 
 // Return the HTML page with the list of native components for iOS or components for web
 server.get('/:type(web|native-ios)', function(req, res) {
-  var type = req.params.type;
+  var searchOptions = {
+    type: req.params.type
+  };
 
-  fs.readFile('./data/react-'+ type +'.json', function(error, data) {
-    if (error) return console.error(error);
-
-    // The catalog of react packages
-    var components = {};
-    components[type] = JSON.parse(data).sort(sortBy("modified", Date, false));
+  getSearchResults(searchOptions).then(function(data) {
+    var components = data.hits;
 
     Router.run(routes, req.url, function (handler, state) {
+      var initialData = {
+        components: components,
+        currentPage: 0,
+        debugMode: !production,
+        searchQuery: state.searchQuery,
+        totalItems: data.nbHits,
+        type: state.params.type
+      };
+
       // Render the app and send the markup for faster page loads and SEO
       // On the client, React will preserve the markup and only attach event handlers
       var Handler = React.createFactory(handler);
-      var content = new Handler({
-        params: state.params,
-        query: state.query,
-        initialComponents: components,
-        debug: !production
-      });
+      var content = new Handler(initialData);
       var output = React.renderToString(content);
 
       res.render('template', {
         output: output,
-        initialComponents: components,
-        debugMode: !production
+        initialData: JSON.stringify(initialData)
       });
     });
-  });
-});
-
-// Return JSON with the list of native components for iOS or components for web
-server.get('/api/components/:type(web|native-ios)', function(req, res) {
-  var type = req.params.type;
-
-  fs.readFile('./data/react-'+ type +'.json', function(error, data) {
-    if (error) return console.error(error);
-
-    var components = JSON.parse(data).sort(sortBy("modified", Date, false));
-    res.json(components);
   });
 });
 

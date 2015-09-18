@@ -1,9 +1,6 @@
 /*jshint node:true, unused:true */
 // TODO
-// Switch d'un tab à l'autre
-// Pousser les stars sur native
-// Mettre l'ihighlight
-// Régler le first load (chargement server-side et return?)
+// Pagination
 var ent = require('ent');
 var keys = require('./keys.json');
 var algoliasearch = require('algoliasearch');
@@ -32,7 +29,7 @@ function formatRecordsForSearch(records) {
     record.created = stringDateToUnixTimestamp(record.created);
     record.modified = stringDateToUnixTimestamp(record.modified);
     // We seem to have a bug in the API where _highlightResult gets htmldecoded
-    // automatically, so we need to encode it once to have a version safe for
+    // automatically, so we need to encode it twice to have a version safe for
     // display
     record.description_encoded = ent.encode(ent.encode(record.description || ''));
     return record;
@@ -49,7 +46,7 @@ function promiseLog(text) {
 function pushDataToAlgolia(jsonFile, indexName) {
   var indexNameTmp = indexName + '_tmp';
   var records = require(jsonFile);
-  var indexTmp = client.initIndex(indexNameTmp);
+  var indexTmp = client.initIndex(indexName);
   records = formatRecordsForSearch(records);
 
   configureIndex(indexTmp)
@@ -71,6 +68,7 @@ function configureIndex(index) {
       'description_encoded' // To have highlight in it
     ],
     attributesToRetrieve: [
+      'description',
       'description_encoded',
       'downloads',
       'githubUser',

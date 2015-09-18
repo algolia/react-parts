@@ -1,7 +1,7 @@
 {
   "private": true,
   "dependencies": {
-    "algoliasearch": "^3.7.8",
+    "algoliasearch": "^3.8.0",
     "async": "^0.9.0",
     "babel": "^4.7.16",
     "babelify": "^5.0.4",

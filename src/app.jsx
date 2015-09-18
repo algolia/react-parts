@@ -13,6 +13,7 @@ import {Tabs, Tab} from './tabs-component.jsx';
 import Pagination from './pagination-component.jsx';
 import Scroller from './scroller-component.jsx';
 import Footer from './footer-component.jsx';
+import getSearchResults from './get-search-results'
 import sortBy from './sort';
 
 let Route = Router.Route;
@@ -29,28 +30,35 @@ export var App = React.createClass({
     router: React.PropTypes.func
   },
   propTypes: {
-    initialComponents: React.PropTypes.object.isRequired,
+    components: React.PropTypes.array.isRequired,
+    currentPage: React.PropTypes.number,
+    debugMode: React.PropTypes.bool,
     perPage: React.PropTypes.number,
-    debugMode: React.PropTypes.bool
+    searchQuery: React.PropTypes.string,
+    totalItems: React.PropTypes.number,
+    type: React.PropTypes.string
   },
   getDefaultProps() {
     return {
-      perPage: 20,
-      debugMode: true
+      currentPage: 0,
+      debugMode: false,
+      perPage: 2
     };
   },
   getInitialState() {
     return {
-      components: this.props.initialComponents,
-      filtered: this.props.initialComponents[this.props.params.type],
-      searchQuery: "",
+      components: this.props.components,
+      currentPage: this.props.currentPage,
+      searchQuery: this.props.searchQuery,
+      totalItems: this.props.totalItems,
+      type: this.props.type
     };
   },
   render() {
     let title = "React.parts";
-    let type = this.props.params.type;
-    let components = this.state.filtered;
-    let componentsForPage = this.componentsForPage(components);
+    let type = this.state.type;
+    let components = this.state.components;
+    let debugMode = this.props.debugMode;
 
     let styles = {
       container:  {
@@ -67,7 +75,7 @@ export var App = React.createClass({
       }
     };
     return (
-      <Scroller className="scrollable" position={ this.props.debugMode ? "same" : "top" } style={styles.container}>
+      <Scroller className="scrollable" position={ debugMode ? "same" : "top" } style={styles.container}>
         <Navbar title={title} height={this.remCalc(55)} onSearch={this.handleSearch} />
 
         <div style={styles.content}>
@@ -76,66 +84,48 @@ export var App = React.createClass({
             <Tab to="components" params={{type: "web"}}>React for Web</Tab>
           </Tabs>
 
-          <RouteHandler components={componentsForPage} debugMode={this.props.debugMode} />
+          <RouteHandler components={components} debugMode={debugMode} />
 
-          <Pagination
-            to="components"
-            params={{ type }}
-            currentPage={this.currentPage()}
-            perPage={this.props.perPage}
-            totalItems={components.length}
-          />
 
           <Footer />
         </div>
       </Scroller>
     );
   },
-  componentWillReceiveProps(newProps) {
-    let type = newProps.params.type;
-    let components = this.state.components;
-    let searchQuery = this.state.searchQuery;
 
-    // If the user changed tab, and we don't have the data, fetch it
-    if (!components[type] || components[type].length === 0) {
-      window.fetch(`/api/components/${type}`).then((response) => {
-        response.json().then((data) => {
-          components[type] = data;
-          // Update both the complete and filtered components lists
-          let filtered = this.filterForSearch(components[type], searchQuery);
-          this.setState({ components, filtered });
-        });
-      });
-    } else {
-      // We already have the data, simply reset the search filters
-      let filtered = this.filterForSearch(components[type], searchQuery);
-      this.setState({ filtered });
-    }
+          // <Pagination
+          //   to="components"
+          //   params={{ type }}
+          //   currentPage={this.props.currentPage}
+          //   perPage={this.props.perPage}
+          //   totalItems={this.props.totalItems}
+          // />
+  componentWillReceiveProps(newProps) {
+    var type = newProps.params.type;
+    var searchQuery = this.state.searchQuery;
+    this.handleSearch({ searchQuery, type});
   },
-  handleSearch(searchQuery) {
-    var type = this.props.params.type;
-    var index = AlgoliaIndices[type];
-    var self = this;
-    index.search(searchQuery, function(err, data) {
-      var filtered = data.hits.map(function(result) {
-        result.modified = new Date(result.modified).toISOString()
-        result.name = result._highlightResult.name.value;
-        result.description = result._highlightResult.description_encoded.value;
-        result.githubUser = result._highlightResult.githubUser.value;
-        return result;
+  handleSearch({searchQuery = '', type = this.state.type}) {
+    var searchOptions = {
+      query: searchQuery,
+      type: type,
+      page: this.state.currentPage,
+      perPage: this.props.perPage
+    }
+    getSearchResults(searchOptions).then((data) => {
+      this.setState({ 
+        type: type,
+        searchQuery: searchQuery,
+        components: data.hits,
+        totalItems: data.nbHits,
+        currentPage: data.page
       });
-      self.setState({ filtered, searchQuery });
     });
   },
   currentPage() {
     var currentPage = parseInt(this.props.query.page); // May return NaN
     if (isNaN(currentPage)) currentPage = 1; // This works, even for 0
     return currentPage;
-  },
-  componentsForPage(items) {
-    let i = Math.max(0, (this.currentPage() - 1) * this.props.perPage);
-    let j = Math.max(0, this.currentPage() * this.props.perPage);
-    return items.slice(i, j);
   }
 });
 
@@ -148,10 +138,7 @@ export var routes = (
 if (typeof(document) !== "undefined") {
   Router.run(routes, Router.HistoryLocation, function(Handler, state) {
     React.render(
-      <Handler {...state}
-        initialComponents={window.initialComponents}
-        debugMode={window.debugMode}
-      />,
+      <Handler {...state} {...window.initialData} />,
       document.getElementById("container")
     );
   });
