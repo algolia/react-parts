@@ -45,9 +45,15 @@ function getSearchResults({ query = '', type = 'native-ios', page = 0, perPage =
       return hit;
     });
 
+    var nativeCount = (statsResponse.facets.type && statsResponse.facets.type['native-ios']) || 0;
+    var webCount = (statsResponse.facets.type && statsResponse.facets.type['web']) || 0;
+
     return {
       components: searchResults,
-      count: statsResponse.facets.type,
+      count: {
+        'native-ios': nativeCount,
+        web: webCount
+      },
       page: searchResponse.page
     }
   });
