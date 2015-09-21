@@ -3,17 +3,40 @@
 var keys = require('./../keys.json');
 var AlgoliaSearch = require('algoliasearch');
 var AlgoliaClient = AlgoliaSearch(keys.algolia.appId, keys.algolia.apiKey);
-var AlgoliaIndex = AlgoliaClient.initIndex('react-parts');
+// var AlgoliaIndex = AlgoliaClient.initIndex('react-parts');
 
 function getSearchResults({ query = '', type = 'native-ios', page = 0, perPage = 20 }) {
+  var searches = [
+    // Facetted query on this type, to display results
+    {
+      indexName: 'react-parts',
+      query: query,
+      params: {
+        facets: ['type'],
+        facetFilters: ['type:' + type],
+        hitsPerPage: perPage,
+        page: page
+      }
+    },
+    // Full query on the index to get the number of results per type
+    {
+      indexName: 'react-parts',
+      query: query,
+      params: {
+        facets: ['type'],
+        hitsPerPage: 1,
+        page: 0,
+        attributesToRetrieve: ['type']
+      }
+    }
+  ]
 
-  return AlgoliaIndex.search(query, { 
-    facets: ['type'],
-    facetFilters: ['type:' + type],
-    hitsPerPage: perPage,
-    page: page
-  }).then(function(content) {
-    content.hits = content.hits.map(function(hit) {
+  return AlgoliaClient.search(searches).then(function(data) {
+    var searchResponse = data.results[0];
+    var statsResponse = data.results[1];
+
+    // Search results
+    var searchResults = searchResponse.hits.map(function(hit) {
       hit.modified = new Date(hit.modified).toISOString();
       hit.name = hit._highlightResult.name.value;
       hit.description = hit._highlightResult.description_encoded.value;
@@ -21,7 +44,12 @@ function getSearchResults({ query = '', type = 'native-ios', page = 0, perPage =
       delete hit._highlightResult;
       return hit;
     });
-    return content;
+
+    return {
+      components: searchResults,
+      count: statsResponse.facets.type,
+      page: searchResponse.page
+    }
   });
 }
 

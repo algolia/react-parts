@@ -63,14 +63,6 @@ let Navbar = React.createClass({
         paddingLeft: this.remCalc(50),
         width: "80%"
       },
-      searchStats: {
-        display: "inline-block",
-        fontSize: this.remCalc(15),
-        fontWeight: "200",
-        height: "100%",
-        textAlign: "right",
-        width: "20%"
-      },
       right: {
         WebkitBoxFlex: 1,
         background: "#4b67a5",
@@ -112,7 +104,6 @@ let Navbar = React.createClass({
             autoCapitalize="off"
             spellCheck="false"
           />
-          <div style={styles.searchStats}>{this.searchStatsText()}</div>
         </div>
         <div style={styles.right}>
           <a className="u-hideSmall" style={styles.link} href="/submit">
@@ -126,16 +117,6 @@ let Navbar = React.createClass({
     var field = React.findDOMNode(this.refs.search);
     var value = field.value.trim().toLowerCase();
     this.props.onSearch({ searchQuery: value });
-  },
-  searchStatsText() {
-    var nbResults = this.props.totalItems;
-    var processingTimeMS = this.props.searchTime;
-    var nbResultsText = Number(nbResults).toLocaleString() + ' results';
-    if (nbResults === 0) nbResultsText = 'No results';
-    if (nbResults === 1) nbResultsText = '1 result';
-
-    nbResultsText += ' found in ' + processingTimeMS + 'ms';
-    return nbResultsText;
   }
 });
 

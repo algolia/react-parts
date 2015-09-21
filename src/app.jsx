@@ -35,7 +35,7 @@ export var App = React.createClass({
     debugMode: React.PropTypes.bool,
     perPage: React.PropTypes.number,
     searchQuery: React.PropTypes.string,
-    totalItems: React.PropTypes.number,
+    searchCount: React.PropTypes.object,
     type: React.PropTypes.string
   },
   getDefaultProps() {
@@ -50,8 +50,7 @@ export var App = React.createClass({
       components: this.props.components,
       currentPage: this.props.currentPage,
       searchQuery: this.props.searchQuery,
-      searchTime: this.props.searchTime,
-      totalItems: this.props.totalItems,
+      searchCount: this.props.searchCount,
       type: this.props.type
     };
   },
@@ -59,6 +58,9 @@ export var App = React.createClass({
     let title = "React.parts";
     let type = this.state.type;
     let components = this.state.components;
+    let searchCountNative = this.state.searchCount['native-ios'];
+    let searchCountWeb = this.state.searchCount.web;
+    let totalItems = (type === 'web') ? searchCountWeb : searchCountNative;
     let debugMode = this.props.debugMode;
 
     let styles = {
@@ -77,12 +79,12 @@ export var App = React.createClass({
     };
     return (
       <Scroller className="scrollable" position={ debugMode ? "same" : "top" } style={styles.container}>
-        <Navbar title={title} height={this.remCalc(55)} totalItems={this.state.totalItems} searchTime={this.state.searchTime} onSearch={this.handleSearch} />
+        <Navbar title={title} height={this.remCalc(55)} onSearch={this.handleSearch} />
 
         <div style={styles.content}>
           <Tabs>
-            <Tab to="components" params={{type: "native-ios"}}>React Native</Tab>
-            <Tab to="components" params={{type: "web"}}>React for Web</Tab>
+            <Tab to="components" params={{type: "native-ios"}}>React Native ({searchCountNative})</Tab>
+            <Tab to="components" params={{type: "web"}}>React for Web ({searchCountWeb})</Tab>
           </Tabs>
 
           <RouteHandler components={components} debugMode={debugMode} />
@@ -92,7 +94,7 @@ export var App = React.createClass({
             params={{ type }}
             currentPage={this.state.currentPage}
             perPage={this.props.perPage}
-            totalItems={this.state.totalItems}
+            totalItems={totalItems}
           />
 
           <Footer />
@@ -127,8 +129,8 @@ export var App = React.createClass({
         type: type,
 
         searchQuery: searchQuery,
-        components: data.hits,
-        totalItems: data.nbHits,
+        components: data.components,
+        searchCount: data.count,
         currentPage: data.page
       });
     });

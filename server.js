@@ -50,7 +50,7 @@ server.get('/:type(web|native-ios)', function(req, res) {
   };
 
   getSearchResults(searchOptions).then(function(data) {
-    var components = data.hits;
+    var components = data.components;
 
     Router.run(routes, req.url, function (handler, state) {
       var initialData = {
@@ -58,8 +58,7 @@ server.get('/:type(web|native-ios)', function(req, res) {
         currentPage: 0,
         debugMode: !production,
         searchQuery: state.searchQuery,
-        searchTime: data.processingTimeMS,
-        totalItems: data.nbHits,
+        searchCount: data.count,
         type: state.params.type
       };
 
