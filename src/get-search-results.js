@@ -3,15 +3,13 @@
 var keys = require('./../keys.json');
 var AlgoliaSearch = require('algoliasearch');
 var AlgoliaClient = AlgoliaSearch(keys.algolia.appId, keys.algolia.apiKey);
-var AlgoliaIndices = {
-  'web' : AlgoliaClient.initIndex('react-parts_web'),
-  'native-ios' : AlgoliaClient.initIndex('react-parts_native-ios')
-}
+var AlgoliaIndex = AlgoliaClient.initIndex('react-parts');
 
 function getSearchResults({ query = '', type = 'native-ios', page = 0, perPage = 20 }) {
-  var index = AlgoliaIndices[type];
 
-  return index.search(query, { 
+  return AlgoliaIndex.search(query, { 
+    facets: ['type'],
+    facetFilters: ['type:' + type],
     hitsPerPage: perPage,
     page: page
   }).then(function(content) {

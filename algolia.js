@@ -1,6 +1,4 @@
 /*jshint node:true, unused:true */
-// TODO
-// Pagination
 var ent = require('ent');
 var keys = require('./keys.json');
 var algoliasearch = require('algoliasearch');
@@ -23,8 +21,9 @@ function stringDateToUnixTimestamp(date) {
 }
 
 
-function formatRecordsForSearch(records) {
+function formatRecordsForSearch(records, type) {
   return records.map(function(record) {
+    record.type = type;
     record.keywords = record.keywords.split(',');
     record.created = stringDateToUnixTimestamp(record.created);
     record.modified = stringDateToUnixTimestamp(record.modified);
@@ -43,11 +42,12 @@ function promiseLog(text) {
   };
 }
 
-function pushDataToAlgolia(jsonFile, indexName) {
+function pushDataToAlgolia(jsonFile, type) {
+  var indexName = 'react-parts';
   var indexNameTmp = indexName + '_tmp';
   var records = require(jsonFile);
   var indexTmp = client.initIndex(indexName);
-  records = formatRecordsForSearch(records);
+  records = formatRecordsForSearch(records, type);
 
   configureIndex(indexTmp)
     .then(promiseLog('[' + indexNameTmp +']: Configured index'))
@@ -60,8 +60,8 @@ function pushDataToAlgolia(jsonFile, indexName) {
 function configureIndex(index) {
   return index.setSettings({
     attributesToIndex: [
-      'name',
-      'description',
+      'unordered(name)',
+      'unordered(description)',
       'unordered(keywords)',
       'githubUser',
       'repo,homepage',
@@ -79,6 +79,7 @@ function configureIndex(index) {
       'stars'
     ],
     attributesForFacetting: [
+      'type',
       'keywords',
       'githubUser'
     ],
@@ -113,5 +114,5 @@ function overwriteTmpIndex(client, indexNameTmp, indexName) {
   };
 }
 
-pushDataToAlgolia('./components/react-web.json', 'react-parts_web');
-pushDataToAlgolia('./components/react-native-ios.json', 'react-parts_native-ios');
+pushDataToAlgolia('./components/react-web.json', 'web');
+pushDataToAlgolia('./components/react-native-ios.json', 'native-ios');
