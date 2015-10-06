@@ -72,6 +72,7 @@ let Footer = React.createClass({
           <div style={styles.copy}>
             React, React Native and logos are copyright of Facebook.
             This page is not affiliated with Facebook.
+            Search thanks to <a href="https://www.algolia.com/">Algolia</a>.
           </div>
         </div>
       </div>

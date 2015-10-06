@@ -83,30 +83,26 @@ let ComponentItem = React.createClass({
       <a className="ComponentItem" style={styles.container} href={this.props.homepage}>
         <div className="ComponentItem-header" style={styles.header}>
           <h3 style={styles.title}>
-            <span style={styles.name}>
-              {this.props.name}
-            </span>
+            <span style={styles.name} dangerouslySetInnerHTML={{__html: this.props.name}}></span>
             <small>
-              <span style={styles.metadata}>by {this.props.githubUser}</span>
+              <span style={styles.metadata}>by <span dangerouslySetInnerHTML={{__html: this.props.githubUser}}></span></span>
               <TimeAgo dateTime={this.props.modified} style={styles.metadata} />
             </small>
           </h3>
           <div style={styles.stats}>
-            <Icon icon="cloud-download" />
-            <span>{this.props.downloads}</span>
-          </div>
-          <div style={styles.stats}>
             <Icon icon="stars" />
             <span>{this.props.stars}</span>
+          </div>
+          <div style={styles.stats}>
+            <Icon icon="cloud-download" />
+            <span>{this.props.downloads}</span>
           </div>
           <div style={styles.stats}>
             <Icon icon="versions" />
             <span>v{this.props.latestVersion}</span>
           </div>
         </div>
-        <p style={styles.description}>
-          {this.props.description}
-        </p>
+        <p style={styles.description} dangerouslySetInnerHTML={{__html: this.props.description}}></p>
       </a>
     );
   }

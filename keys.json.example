@@ -2,5 +2,9 @@
   "github": {
     "username": "USERNAME",
     "password": "PASSWORD"
+  },
+  "algolia": {
+    "appId": "APPLICATION_ID",
+    "apiKey": "ADMIN_API_KEY"
   }
 }

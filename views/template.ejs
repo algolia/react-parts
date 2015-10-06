@@ -10,9 +10,6 @@
   <link href="//cdnjs.cloudflare.com/ajax/libs/normalize/3.0.2/normalize.min.css" rel="stylesheet">
   <link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,600|Source+Code+Pro:400" rel="stylesheet">
 
-  <link rel="prefetch" href="/api/components/web">
-  <link rel="prefetch" href="/api/components/native-ios">
-
   <style>
     /* Disable overscroll (bouncing scroll effect on OS X) */
     html, body {
@@ -43,6 +40,11 @@
     }
     a:visited {
       color: #666;
+    }
+    
+    /* Highlight search color */
+    mark {
+      background-color: rgba(37, 59, 107, 0.1);
     }
 
     ::-webkit-input-placeholder {
@@ -76,9 +78,8 @@
   <div id="container"><%- output %></div>
 
   <script>
-    window.debugMode = <%- debugMode %>;
-    window.initialComponents = <%- JSON.stringify(initialComponents) %>;
+    window.initialData = <%- initialData %>;
   </script>
-  <%- cachify_js("/app.min.js") %>
+  <%- cachify_js("/app.js") %>
 </body>
 </html>

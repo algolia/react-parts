@@ -55,12 +55,13 @@ let Navbar = React.createClass({
         background: "transparent",
         border: "none",
         boxSizing: "border-box",
+        display: "inline-block",
         fontSize: this.remCalc(19),
         height: "100%",
         outline: "none",
         paddingBottom: this.remCalc(4),
         paddingLeft: this.remCalc(50),
-        width: "100%"
+        width: "80%"
       },
       right: {
         WebkitBoxFlex: 1,
@@ -84,6 +85,7 @@ let Navbar = React.createClass({
         textDecoration: "none"
       }
     };
+
     return (
       <div className="Navbar" style={styles.container}>
         <div style={styles.left}>
@@ -114,7 +116,7 @@ let Navbar = React.createClass({
   handleKeyUp() {
     var field = React.findDOMNode(this.refs.search);
     var value = field.value.trim().toLowerCase();
-    this.props.onSearch(value);
+    this.props.onSearch({ searchQuery: value });
   }
 });
 
